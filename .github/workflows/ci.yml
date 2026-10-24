@@ -35,18 +35,24 @@ jobs:
         with:
           python-version: "3.11"
       - name: Install Airflow and pipeline dependencies (Airflow constraints)
+        id: install
         run: |
           pip install "apache-airflow==${AIRFLOW_VERSION}" -r requirements.txt -e . \
             --constraint "https://raw.githubusercontent.com/apache/airflow/constraints-${AIRFLOW_VERSION}/constraints-3.11.txt"
       - name: pytest (includes the DAG structure test)
         run: python -m pytest -v -rs
       - name: Init Airflow metadata DB
+        # Run the DAG even if pytest failed, so both signals show up in one run.
+        if: ${{ !cancelled() && steps.install.outcome == 'success' }}
         run: airflow db migrate
       - name: Pick the run date (yesterday, UTC)
+        if: ${{ !cancelled() && steps.install.outcome == 'success' }}
         run: echo "RUN_DATE=$(date -u -d yesterday +%F)" >> "$GITHUB_ENV"
       - name: airflow dags test (run 1)
+        if: ${{ !cancelled() && steps.install.outcome == 'success' }}
         run: airflow dags test energy_prices_iceberg "$RUN_DATE"
       - name: airflow dags test (run 2, same day - must stay idempotent)
+        if: ${{ !cancelled() && steps.install.outcome == 'success' }}
         run: airflow dags test energy_prices_iceberg "$RUN_DATE"
       - name: Export real API data as fallback sample (printed for refreshing data/sample)
         if: always()
