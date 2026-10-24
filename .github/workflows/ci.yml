@@ -48,6 +48,11 @@ jobs:
         run: airflow dags test energy_prices_iceberg "$RUN_DATE"
       - name: airflow dags test (run 2, same day - must stay idempotent)
         run: airflow dags test energy_prices_iceberg "$RUN_DATE"
+      - name: Export real API data as fallback sample (printed for refreshing data/sample)
+        if: always()
+        run: |
+          f=$(ls data/raw/*_api.parquet 2>/dev/null | head -1)
+          if [ -n "$f" ]; then python scripts/export_sample.py "$f" && cat data/sample/de_lu_day_ahead_sample.csv; else echo "no API data in this run"; fi
       - name: Show table contents and data quality report
         if: always()
         run: |
