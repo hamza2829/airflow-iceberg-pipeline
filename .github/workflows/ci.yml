@@ -1,0 +1,63 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  unit-tests:
+    name: pytest (${{ matrix.os }}, no Airflow)
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - run: pip install -r requirements.txt
+      - run: python -m pytest -v -rs
+
+  airflow:
+    name: pytest + airflow dags test (ubuntu)
+    runs-on: ubuntu-latest
+    env:
+      AIRFLOW_VERSION: "3.3.2"
+      AIRFLOW_HOME: ${{ github.workspace }}/airflow_home
+      AIRFLOW__CORE__DAGS_FOLDER: ${{ github.workspace }}/dags
+      AIRFLOW__CORE__LOAD_EXAMPLES: "False"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install Airflow and pipeline dependencies (Airflow constraints)
+        run: |
+          pip install "apache-airflow==${AIRFLOW_VERSION}" -r requirements.txt -e . \
+            --constraint "https://raw.githubusercontent.com/apache/airflow/constraints-${AIRFLOW_VERSION}/constraints-3.11.txt"
+      - name: pytest (includes the DAG structure test)
+        run: python -m pytest -v -rs
+      - name: Init Airflow metadata DB
+        run: airflow db migrate
+      - name: Pick the run date (yesterday, UTC)
+        run: echo "RUN_DATE=$(date -u -d yesterday +%F)" >> "$GITHUB_ENV"
+      - name: airflow dags test (run 1)
+        run: airflow dags test energy_prices_iceberg "$RUN_DATE"
+      - name: airflow dags test (run 2, same day - must stay idempotent)
+        run: airflow dags test energy_prices_iceberg "$RUN_DATE"
+      - name: Show table contents and data quality report
+        if: always()
+        run: |
+          python scripts/summarize.py || true
+          cat data/reports/*.json || true
+          ls -l data/raw || true
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: pipeline-output
+          path: |
+            data/raw/
+            data/reports/
