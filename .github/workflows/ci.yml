@@ -52,7 +52,9 @@ jobs:
         if: always()
         run: |
           f=$(ls data/raw/*_api.parquet 2>/dev/null | head -1)
-          if [ -n "$f" ]; then python scripts/export_sample.py "$f" && cat data/sample/de_lu_day_ahead_sample.csv; else echo "no API data in this run"; fi
+          if [ -n "$f" ]; then python scripts/export_sample.py "$f" && cat data/sample/de_lu_day_ahead_sample.csv
+            git diff --quiet data/sample/ && echo "committed sample is identical to this API export" || echo "committed sample differs from this API export (expected when RUN_DATE is not the sample day)"
+          else echo "no API data in this run"; fi
       - name: Show table contents and data quality report
         if: always()
         run: |

@@ -47,7 +47,10 @@ def get_catalog(warehouse_dir: Path | None = None) -> SqlCatalog:
     return SqlCatalog(
         "local",
         uri=f"sqlite:///{(warehouse_dir / 'catalog.db').as_posix()}",
-        warehouse=warehouse_dir.as_uri(),
+        # Not Path.as_uri(): pyiceberg turns file:///C:/... into the invalid path /C:/...
+        # on Windows. "file://" + posix path gives file://C:/... there and
+        # file:///home/... on Linux, which both resolve correctly.
+        warehouse="file://" + warehouse_dir.as_posix(),
     )
 
 

@@ -48,3 +48,18 @@ def test_ingest_falls_back_to_sample_and_logs_it(data_dir, monkeypatch, caplog, 
     assert meta["source"] == "sample"
     assert "FALLBACK USED" in caplog.text and "network is down" in caplog.text
     assert set(pd.read_parquet(meta["raw_path"])["source"]) == {"sample"}
+
+
+def test_shipped_sample_is_real_full_day_that_passes_all_checks():
+    import duckdb
+
+    from pipeline.quality import run_checks
+    from pipeline.transform import local_days, transform
+
+    raw = ingest.load_sample()
+    (day,) = local_days(raw["unix_seconds"])
+    con = duckdb.connect()
+    con.register("prices", transform(raw, day))
+
+    assert day.isoformat() == "2026-10-23"
+    assert all(r.passed for r in run_checks(con, "prices", day))
