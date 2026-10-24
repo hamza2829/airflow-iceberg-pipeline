@@ -41,8 +41,8 @@ def fetch_from_api(day: date, timeout: float = 30.0) -> pd.DataFrame:
     )
 
 
-def load_sample(path: Path = config.SAMPLE_CSV) -> pd.DataFrame:
-    return pd.read_csv(path, dtype={"unix_seconds": "int64", "price": "float64", "unit": "string"})
+def load_sample(path: Path | None = None) -> pd.DataFrame:
+    return pd.read_csv(path or config.SAMPLE_CSV, dtype={"unix_seconds": "int64", "price": "float64", "unit": "string"})
 
 
 def ingest_day(day: date, raw_dir: Path | None = None) -> dict:
