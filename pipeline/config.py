@@ -13,7 +13,7 @@ BIDDING_ZONE = "DE-LU"
 LOCAL_TZ = "Europe/Berlin"
 # The SDAC day-ahead auction switched to a 15-minute market time unit on 2025-10-01.
 INTERVAL_MINUTES = 15
-# Harmonised SDAC clearing price limits in EUR/MWh.
+# Plausible range in EUR/MWh, based on the SDAC harmonised min/max clearing prices.
 PRICE_MIN = -500.0
 PRICE_MAX = 4000.0
 
