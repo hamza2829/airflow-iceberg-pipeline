@@ -74,7 +74,7 @@ def load_day(rows: pa.Table, day: date, catalog: SqlCatalog | None = None) -> in
         raise ValueError(f"Rows for {day} contain other delivery days: {other_days.to_pylist()}")
 
     table = get_or_create_table(catalog or get_catalog())
-    table.overwrite(rows, overwrite_filter=EqualTo("delivery_day", day.isoformat()))
+    table.append(rows)
     snapshot = table.current_snapshot()
     log.info(
         "Overwrote partition delivery_day=%s with %d rows (snapshot %s)",
