@@ -1,0 +1,5 @@
+Metadata-Version: 2.4
+Name: airflow-iceberg-pipeline
+Version: 0.1.0
+Summary: Daily German day-ahead electricity prices -> Apache Iceberg -> DuckDB data quality checks, orchestrated by Airflow.
+Requires-Python: <3.12,>=3.11

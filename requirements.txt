@@ -1,0 +1,9 @@
+# Runtime + test dependencies (no Airflow). Works on Windows, macOS and Linux.
+# Versions match the Airflow 3.3.2 constraints file for Python 3.11.
+pyiceberg[sql-sqlite,pyarrow]==0.12.0
+pyarrow==25.0.1
+pandas==3.0.5
+requests==2.34.2
+SQLAlchemy==2.0.52
+duckdb==2.0.0
+pytest==9.1.1
