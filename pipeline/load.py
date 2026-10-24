@@ -74,12 +74,17 @@ def load_day(rows: pa.Table, day: date, catalog: SqlCatalog | None = None) -> in
         raise ValueError(f"Rows for {day} contain other delivery days: {other_days.to_pylist()}")
 
     table = get_or_create_table(catalog or get_catalog())
-    table.append(rows)
+    day_filter = EqualTo("delivery_day", day.isoformat())
+    table.overwrite(rows, overwrite_filter=day_filter)
+    # Log what is really in the partition now, not what we meant to write. During the
+    # failure drill the old message claimed an overwrite while rows were appended.
+    in_partition = table.scan(row_filter=day_filter, selected_fields=("timestamp_utc",)).to_arrow().num_rows
     snapshot = table.current_snapshot()
     log.info(
-        "Overwrote partition delivery_day=%s with %d rows (snapshot %s)",
-        day,
+        "Wrote %d rows for delivery_day=%s; partition now holds %d rows (snapshot %s)",
         rows.num_rows,
+        day,
+        in_partition,
         snapshot.snapshot_id if snapshot else None,
     )
     return rows.num_rows
